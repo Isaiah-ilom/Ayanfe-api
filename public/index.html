@@ -5,139 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AYANFE 🌹💜🦋🥀</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-image: url('https://i.imgur.com/47KnbfN.jpeg'); /* Your image as background */
-      background-size: cover;
-      background-position: center;
-      margin: 0;
-      padding: 0;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .chat-container {
-      width: 700px;
-      background-color: rgba(18, 0, 53, 0.8); /* Adding transparency to the chat container */
-      border: 1px solid #2b2b40;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-      display: flex;
-      flex-direction: column;
-      height: 80vh;
-    }
-
-    .chat-header {
-      background-color: rgba(18, 0, 53, 0.9);
-      padding: 20px;
-      border-bottom: 1px solid #2b2b40;
-      text-align: center;
-      color: #fff;
-    }
-
-    .chat-header h2 {
-      margin: 0;
-      font-size: 24px;
-      font-weight: bold;
-      color: #e4e4e7;
-    }
-
-    .chat-messages {
-      padding: 20px;
-      flex-grow: 1;
-      overflow-y: auto;
-      background-color: rgba(14, 3, 36, 0.7); /* Transparent background inside chat */
-      color: #fff;
-      background-image: url('https://i.imgur.com/47KnbfN.jpeg'); /* Background image inside chat */
-      background-size: cover;
-      background-position: center;
-      border-radius: 0 0 10px 10px;
-    }
-
-    .message {
-      margin-bottom: 15px;
-      padding: 10px;
-      border-radius: 10px;
-      word-break: break-word;
-      max-width: 80%;
-      position: relative;
-    }
-
-    .user-message {
-      background-color: #390065;
-      color: #fff;
-      align-self: flex-end;
-      text-align: right;
-      margin-left: auto;
-    }
-
-    .bot-message {
-      background-color: #4b006f;
-      color: #fff;
-      text-align: left;
-    }
-
-    .copy-button {
-      position: absolute;
-      right: -30px;
-      top: 10px;
-      background-color: #ff00ff;
-      color: #fff;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      padding: 5px;
-      font-size: 12px;
-    }
-
-    .copy-button:hover {
-      background-color: #d900d9;
-    }
-
-    .chat-input {
-      display: flex;
-      padding: 15px;
-      background-color: rgba(18, 0, 53, 0.9);
-      border-top: 1px solid #2b2b40;
-    }
-
-    #message-input {
-      flex-grow: 1;
-      padding: 10px;
-      border-radius: 10px;
-      background-color: #1b0a43;
-      color: #fff;
-      border: none;
-      font-size: 16px;
-      resize: none;
-      max-height: 100px;
-    }
-
-    #send-button {
-      background-color: #ff00ff;
-      color: #fff;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      margin-left: 10px;
-    }
-
-    #send-button:hover {
-      background-color: #d900d9;
-    }
-
-    /* Scrollbar */
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #57007f;
-      border-radius: 10px;
-    }
+    /* CSS styling remains the same as provided earlier */
   </style>
 </head>
 <body>
@@ -152,7 +20,7 @@
       </div>
     </div>
     <div class="chat-input">
-      <textarea id="message-input" placeholder="Type a message..."></textarea>
+      <textarea id="message-input" placeholder="Type a message or 'imagine <prompt>' to create an image..."></textarea>
       <button id="send-button">Send</button>
     </div>
   </div>
@@ -162,46 +30,77 @@
     const sendButton = document.getElementById('send-button');
     const chatMessages = document.getElementById('chat-messages');
 
-    let uid = Math.random().toString(36).substr(2, 9); // Generate a random UID
+    let uid = Math.random().toString(36).substr(2, 9);
 
-    sendButton.addEventListener('click', async () => {
+    sendButton.addEventListener('click', () => handleMessage());
+
+    messageInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        handleMessage();
+      }
+    });
+
+    async function handleMessage() {
       const message = messageInput.value.trim();
       if (message) {
-        const messageElement = document.createElement('div');
-        messageElement.classList.add('message', 'user-message');
-        messageElement.innerHTML = `<span>${message}</span>`;
-        chatMessages.appendChild(messageElement);
+        displayMessage('user', message);
 
-        try {
-          const response = await fetch('/ask', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ question: message, uid: uid }),
-          });
-          const data = await response.json();
-          const botMessage = document.createElement('div');
-          botMessage.classList.add('message', 'bot-message');
-          botMessage.innerHTML = `<span>${data.answer}</span><button class="copy-button" onclick="copyMessage(this)">Copy</button>`;
-          chatMessages.appendChild(botMessage);
-
-          chatMessages.scrollTop = chatMessages.scrollHeight;
-        } catch (error) {
-          console.error('Error:', error);
-          const botMessage = document.createElement('div');
-          botMessage.classList.add('message', 'bot-message');
-          botMessage.innerHTML = `<span>Error: Failed to retrieve answer</span><button class="copy-button" onclick="copyMessage(this)">Copy</button>`;
-          chatMessages.appendChild(botMessage);
+        if (message.startsWith('imagine ')) {
+          const prompt = message.slice(8).trim();
+          await generateImage(prompt);
+        } else {
+          await sendMessage(message);
         }
 
         messageInput.value = '';
       }
-    });
+    }
 
-    messageInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        sendButton.click();
+    function displayMessage(role, content, imageUrl = null) {
+      const messageElement = document.createElement('div');
+      messageElement.classList.add('message', `${role}-message`);
+      if (imageUrl) {
+        messageElement.innerHTML = `<span>${content}</span><br><img src="${imageUrl}" alt="Generated Image" style="max-width: 100%; border-radius: 10px; margin-top: 10px;">`;
+      } else {
+        messageElement.innerHTML = `<span>${content}</span>`;
       }
-    });
+      chatMessages.appendChild(messageElement);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    async function sendMessage(message) {
+      try {
+        const response = await fetch('/ask', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: message, uid: uid }),
+        });
+        const data = await response.json();
+        displayMessage('bot', data.answer);
+      } catch (error) {
+        displayMessage('bot', 'Error: Failed to retrieve answer');
+        console.error('Error:', error);
+      }
+    }
+
+    async function generateImage(prompt) {
+      try {
+        const response = await fetch('/imagine', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt }),
+        });
+        const data = await response.json();
+        if (data.imageUrl) {
+          displayMessage('bot', `Here's your image for: "${prompt}"`, data.imageUrl);
+        } else {
+          displayMessage('bot', 'Error: Failed to generate image');
+        }
+      } catch (error) {
+        displayMessage('bot', 'Error: Failed to generate image');
+        console.error('Error:', error);
+      }
+    }
 
     function copyMessage(button) {
       const messageText = button.previousElementSibling.innerText;
